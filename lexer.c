@@ -21,9 +21,13 @@ const char *keywords[] = {
   "var",
   "while"
 };
-const KEYWORD_COUNT = 16;
+const size_t KEYWORD_COUNT = 16;
 
 keyword_node keyword_nodes[65];
+
+const token_type keyword_indexs[] = {
+  AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR, PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE
+};
 
 keyword_node make_keyword_node() {
   keyword_node nnode;
@@ -60,7 +64,7 @@ void init_keyword_tree() {
 
     if (flag) {
       transversal->is_filled = true;
-      //transversal->keyword
+      transversal->keyword = keyword_indexs[i];
     }
   }
 
@@ -68,5 +72,21 @@ void init_keyword_tree() {
 }
 
 int is_keyword(char *str) {
+  keyword_node *transversal = &keyword_nodes[0];
 
+  for (size_t i = 0; str[i] != '\0'; i++) {
+    int index = str[i] - 'a';
+
+    if ((index < 0 || index > 25)) {
+      return -1;
+    }
+
+    if (transversal->arr[index] == NULL) {
+      return -1;
+    }
+
+    transversal = transversal->arr[index];
+  }
+
+  return transversal->keyword;
 }
