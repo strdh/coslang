@@ -28,4 +28,8 @@ keyword_node make_keyword_node();
 void init_keyword_tree();
 int is_keyword(char *str);
 
+void add_token(token_list *list, token value);
+char *substr(char *str, size_t len, size_t start, size_t end);
+bool is_mathoptr(char c);
+
 #endif

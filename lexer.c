@@ -90,3 +90,58 @@ int is_keyword(char *str) {
 
   return transversal->keyword;
 }
+
+void add_token(token_list *list, token value) {
+  if (list->len == list->capacity) {
+    list->capacity *= 2;
+    list->value = (token*)realloc(list->value, list->capacity);
+    if (list->value == NULL) {
+      fprintf(stderr, "Error when insert token\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  list->value[list->len] = value;
+  list->len++;
+}
+
+char *substr(char *str, size_t len, size_t start, size_t end) {
+  char *result = NULL;
+  
+  bool is_len_valid = (len > 0);
+  bool is_start_valid = (start <= len && start <= end && start >= 0);
+  bool is_end_valid = (end <= len && end >= start && end >= 0);
+  bool is_valid = (is_len_valid && is_start_valid && is_end_valid);
+
+  if (is_valid) {
+    result = (char *)malloc((end - start + 2) * sizeof(char));
+    if (result != NULL) {
+      for (size_t i = start, j = 0; i <= end && str[i] != '\0'; i++, j++) {
+        result[j] = str[i];
+      }
+      result[end - start + 1] = '\0'; // Ensure null termination
+    } else {
+      perror("Memory allocation failed");
+    }
+  } else {
+    fprintf(stderr, "Invalid input parameters\n");
+  }
+
+  return result;
+}
+
+bool is_mathoptr(char c) {
+  bool is_equal = (c == '=');
+  bool is_lower = (c == '<');
+  bool is_bigger = (c == '>');
+  bool is_bang = (c == '!');
+  bool is_plus = (c == '+');
+  bool is_minus = (c == '-');
+  bool is_slash = (c == '/');
+  bool is_star = (c == '*');
+  //bool is_mod = (c == '%');
+
+  bool result = (is_equal || is_lower || is_bigger || is_bang || is_plus || is_minus || is_slash || is_star);
+
+  return result;
+}
