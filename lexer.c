@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include "error.h"
 
 bool LEXER_ERROR_OCCURED = false;
 bool LEXER_SET = false;
@@ -95,8 +96,8 @@ char *substr(char *str, size_t len, size_t start, size_t end) {
   char *result = NULL;
   
   bool is_len_valid = (len > 0);
-  bool is_start_valid = (start <= len && start <= end && start >= 0);
-  bool is_end_valid = (end <= len && end >= start && end >= 0);
+  bool is_start_valid = (start <= len && start <= end);
+  bool is_end_valid = (end <= len && end >= start);
   bool is_valid = (is_len_valid && is_start_valid && is_end_valid);
 
   if (is_valid) {
@@ -133,7 +134,7 @@ bool is_mathoptr(char c) {
 }
 
 char *token_name(token_type type) {
-  const char *token_types[] = {
+  char *token_types[] = {
     //single character
     "LAPREN", "RPAREN", "LBRACE", "RBRACE", "COMMA", "DOT", "MINUS", "PLUS", "SEMICOLON", "SLASH", "STAR", "MOD",
     //one or two character
@@ -274,6 +275,33 @@ void scan_token(char *source, token_list *list) {
           }
         }
         break;
+      case '/':
+        if (iter + 1 < source_len) {
+          if (source[iter + 1] == '/') {
+            flag = false;
+            iter++;
+            while (iter < source_len && source[iter] != '\n') {
+              iter++;
+            }
+
+            if (iter < source_len && source[iter] == '\n') {
+              line++;
+            }
+          }
+        } else {
+          new_token.type = SLASH;
+        }
+        break;
+      default:
+        flag = false;
+        LEXER_ERROR_OCCURED = true;
+        print_err(UNEXPECTED_CHAR, line, substr(source, source_len, iter, iter));
+    }
+
+    iter++;
+
+    if (flag) {
+      add_token(list, new_token);
     }
   }
 }
