@@ -91,20 +91,6 @@ int is_keyword(char *str) {
   return transversal->keyword;
 }
 
-void add_token(token_list *list, token value) {
-  if (list->len == list->capacity) {
-    list->capacity *= 2;
-    list->value = (token*)realloc(list->value, list->capacity);
-    if (list->value == NULL) {
-      fprintf(stderr, "Error when insert token\n");
-      exit(EXIT_FAILURE);
-    }
-  }
-
-  list->value[list->len] = value;
-  list->len++;
-}
-
 char *substr(char *str, size_t len, size_t start, size_t end) {
   char *result = NULL;
   
@@ -139,9 +125,155 @@ bool is_mathoptr(char c) {
   bool is_minus = (c == '-');
   bool is_slash = (c == '/');
   bool is_star = (c == '*');
-  //bool is_mod = (c == '%');
+  bool is_mod = (c == '%');
 
-  bool result = (is_equal || is_lower || is_bigger || is_bang || is_plus || is_minus || is_slash || is_star);
+  bool result = (is_equal || is_lower || is_bigger || is_bang || is_plus || is_minus || is_slash || is_star || is_mod);
 
   return result;
+}
+
+char *token_name(token_type type) {
+  const char *token_types[] = {
+    //single character
+    "LAPREN", "RPAREN", "LBRACE", "RBRACE", "COMMA", "DOT", "MINUS", "PLUS", "SEMICOLON", "SLASH", "STAR", "MOD",
+    //one or two character
+    "BANG", "BANG_EQUAL", "EQUAL", "EQUAL_EQUAL", "GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL", 
+    //literals
+    "IDENTIFIER", "INT", "DEC", "CHAR", "STRING", "BOOL",
+    //keywords
+    "AND", "CLASS", "ELSE", "FALSE", "FUN", "FOR", "IF", "NIL", "OR", "PRINT", "RETURN", "SUPER", "THIS", "TRUE", "VAR", "WHILE",
+    //others
+    "END_OF_FILE", "NEWLINE", "CONDITION", "STATEMENT"
+  };
+
+  return token_types[type];
+}
+
+token_list init_token_list() {
+  token_list list;
+  list.len = 0;
+  list.capacity = 256;
+  list.value = (token*)malloc(sizeof(token) * list.capacity);
+  if (list.value == NULL) {
+    fprintf(stderr, "Error when insert token\n");
+    exit(EXIT_FAILURE);
+  }
+  return list;
+}
+
+void add_token(token_list *list, token value) {
+  if (list->len == list->capacity) {
+    list->capacity *= 2;
+    list->value = (token*)realloc(list->value, list->capacity);
+    if (list->value == NULL) {
+      fprintf(stderr, "Error when insert token\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  list->value[list->len] = value;
+  list->len++;
+}
+
+void scan_token(char *source, token_list *list) {
+  size_t source_len = strlen(source);
+  size_t iter = 0;
+  size_t line = 1;
+
+  while (iter < source_len && !LEXER_ERROR_OCCURED) {
+    bool flag = true;
+    token new_token;
+    new_token.lexeme = substr(source, source_len, iter, iter);
+    new_token.line = line;
+    char current_char = source[iter];
+
+    switch(current_char) {
+      case '(':
+        new_token.type = LPAREN;
+        break;
+      case ')':
+        new_token.type = RPAREN;
+        break;
+      case '{':
+        new_token.type = LBRACE;
+        break;
+      case '}':
+        new_token.type = RBRACE;
+        break;
+      case ',':
+        new_token.type = COMMA;
+        break;
+      case '.':
+        new_token.type = DOT;
+        break;
+      case '-':
+        new_token.type = MINUS;
+        break;
+      case '+':
+        new_token.type = PLUS;
+        break;
+      case ';':
+        new_token.type = SEMICOLON;
+        break;
+      case '*':
+        new_token.type = STAR;
+        break;
+      case '%':
+        new_token.type = MOD;
+        break;
+      case ' ':
+        flag = false;
+        break;
+      case '\r':
+        flag = false;
+        break;
+      case '\t':
+        flag = false;
+        break;
+      case '\n':
+        flag = false;
+        line++;
+        break;
+      case '!':
+        new_token.type = BANG;
+        if (iter + 1 < source_len) {
+          if (source[iter + 1] == '=') {
+            new_token.type = BANG_EQUAL;
+            new_token.lexeme = substr(source, source_len, iter, iter + 1);
+            iter++;
+          }
+        }
+        break;
+      case '=':
+        new_token.type = EQUAL;
+        if (iter + 1 < source_len) {
+          if (source[iter + 1] == '=') {
+            new_token.type = EQUAL_EQUAL;
+            new_token.lexeme = substr(source, source_len, iter, iter + 1);
+            iter++;
+          }
+        }
+        break;
+      case '<':
+        new_token.type = LESS;
+        if (iter + 1 < source_len) {
+          if (source[iter + 1] == '=') {
+            new_token.type = LESS_EQUAL;
+            new_token.lexeme = substr(source, source_len, iter, iter + 1);
+            iter++;
+          }
+        }
+        break;
+      case '>':
+        new_token.type = GREATER;
+        if (iter + 1 < source_len) {
+          if (source[iter + 1] == '=') {
+            new_token.type = GREATER_EQUAL;
+            new_token.lexeme = substr(source, source_len, iter, iter + 1);
+            iter++;
+          }
+        }
+        break;
+    }
+  }
 }
