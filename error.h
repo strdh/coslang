@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 typedef enum {
-  UNEXPECTED_CHAR, INVALID_DECIMAL, INVALID_NUMBER, PARSER_ERROR
+  UNEXPECTED_CHAR, INVALID_DECIMAL, INVALID_INT, UNTERMINATED_STRING, PARSER_ERROR
 }error_type;
 
 void print_err(error_type type, size_t line, char *where);

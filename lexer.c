@@ -324,10 +324,10 @@ void scan_token(char *source, token_list *list) {
         } else if (isdigit(current_char)) {
           size_t start_iter = iter;
           bool dot_exist = false;
-          while (iter < source_len && !isspace(source[iter]) && source[iter] != ';' && source[iter] != '\0') {
-            if (source[iter] == '.') {
+          while (iter < source_len && !isspace(source[iter]) && source[iter] != ';' && source[iter] != '\0') {            if (source[iter] == '.') {
               if (dot_exist) {
                 flag = false;
+                LEXER_ERROR_OCCURED = true;
                 print_err(INVALID_DECIMAL, line, substr(source, source_len, start_iter, iter));
                 break;
               }
@@ -356,8 +356,9 @@ void scan_token(char *source, token_list *list) {
               int final_value = atoi(new_token.lexeme);
               new_token.literal.int_value = final_value;
             }
-          } else {
-            print_err(INVALID_NUMBER, line, substr(source, source_len, start_iter, iter - 1));
+          } else if (!LEXER_ERROR_OCCURED) {
+            LEXER_ERROR_OCCURED = true;
+            print_err(INVALID_INT, line, substr(source, source_len, start_iter, iter));
           }
           iter--;
         } else {

@@ -9,6 +9,9 @@ void print_err(error_type type, size_t line, char *where) {
     case PARSER_ERROR:
       strcpy(msg, "Parser error");
       break;
+    case INVALID_INT:
+      strcpy(msg, "Invalid integer");
+      break;
     case INVALID_DECIMAL:
       strcpy(msg, "Invalid decimal literal");
       break;
