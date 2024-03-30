@@ -73,6 +73,10 @@ void init_keyword_tree() {
 }
 
 int is_keyword(char *str) {
+  if (str == NULL) {
+    return -1;
+  }
+
   keyword_node *transversal = &keyword_nodes[0];
 
   for (size_t i = 0; str[i] != '\0'; i++) {
@@ -89,6 +93,10 @@ int is_keyword(char *str) {
     transversal = transversal->arr[index];
   }
 
+  if (!transversal->is_filled) {
+    return -1;
+  }
+
   return transversal->keyword;
 }
 
@@ -96,8 +104,8 @@ char *substr(char *str, size_t len, size_t start, size_t end) {
   char *result = NULL;
   
   bool is_len_valid = (len > 0);
-  bool is_start_valid = (start <= len && start <= end);
-  bool is_end_valid = (end <= len && end >= start);
+  bool is_start_valid = (start < len && start <= end);
+  bool is_end_valid = (end < len && end >= start);
   bool is_valid = (is_len_valid && is_start_valid && is_end_valid);
 
   if (is_valid) {
@@ -106,7 +114,7 @@ char *substr(char *str, size_t len, size_t start, size_t end) {
       for (size_t i = start, j = 0; i <= end && str[i] != '\0'; i++, j++) {
         result[j] = str[i];
       }
-      result[end - start + 1] = '\0'; // Ensure null termination
+      result[end - start + 1] = '\0';
     } else {
       perror("Memory allocation failed");
     }
@@ -181,7 +189,7 @@ void scan_token(char *source, token_list *list) {
   size_t iter = 0;
   size_t line = 1;
 
-  while (iter < source_len && !LEXER_ERROR_OCCURED) {
+  while (iter < source_len && !LEXER_ERROR_OCCURED && source[iter] != '\0') {
     bool flag = true;
     token new_token;
     new_token.lexeme = substr(source, source_len, iter, iter);
@@ -293,9 +301,70 @@ void scan_token(char *source, token_list *list) {
         }
         break;
       default:
-        flag = false;
-        LEXER_ERROR_OCCURED = true;
-        print_err(UNEXPECTED_CHAR, line, substr(source, source_len, iter, iter));
+        if (current_char == '_' || isalpha(current_char)) {
+          new_token.type = IDENTIFIER;
+          if (iter + 1 >= source_len) {
+            break;
+          }
+
+          size_t start_iter = iter;
+          while (iter < source_len && !isspace(source[iter]) && source[iter] != '\0' && (isalpha(source[iter]) || isdigit(source[iter]) || source[iter] == '_')) {
+            iter++;
+          }
+
+          new_token.lexeme = substr(source, source_len, start_iter, iter - 1);
+          int keyword_index = is_keyword(new_token.lexeme);
+
+          if (keyword_index != -1) {
+            new_token.type = keyword_index;
+            if (keyword_index == TRUE) new_token.literal.bool_value = true;
+            else if (keyword_index == FALSE) new_token.literal.bool_value = false;
+          }
+          iter--;
+        } else if (isdigit(current_char)) {
+          size_t start_iter = iter;
+          bool dot_exist = false;
+          while (iter < source_len && !isspace(source[iter]) && source[iter] != ';' && source[iter] != '\0') {
+            if (source[iter] == '.') {
+              if (dot_exist) {
+                flag = false;
+                print_err(INVALID_DECIMAL, line, substr(source, source_len, start_iter, iter));
+                break;
+              }
+
+              dot_exist = true;
+            } else {
+              if (!isdigit(source[iter])) {
+                if (!is_mathoptr(source[iter])) {
+                  flag = false;
+                }
+                break;
+              }
+            }
+
+            iter++;
+          }
+
+          if (flag) {
+            new_token.lexeme = substr(source, source_len, start_iter, iter - 1);
+            if (dot_exist) {
+              new_token.type = DEC;
+              double final_value = strtod(new_token.lexeme, NULL);
+              new_token.literal.dec_value = final_value;
+            } else {
+              new_token.type = INT;
+              int final_value = atoi(new_token.lexeme);
+              new_token.literal.int_value = final_value;
+            }
+          } else {
+            print_err(INVALID_NUMBER, line, substr(source, source_len, start_iter, iter - 1));
+          }
+          iter--;
+        } else {
+          flag = false;
+          LEXER_ERROR_OCCURED = true;
+          print_err(UNEXPECTED_CHAR, line, substr(source, source_len, iter, iter));
+        }
     }
 
     iter++;
