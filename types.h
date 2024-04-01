@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <wchar.h>
 
 typedef enum {
   //single-character token_type
@@ -18,7 +19,7 @@ typedef enum {
 }token_type;
 
 typedef struct {
-  char *value;
+  wchar_t *value;
   size_t len;
   size_t capacity;
 }string;
@@ -26,14 +27,14 @@ typedef struct {
 typedef union {
   int int_value;
   double dec_value;
-  char char_value;
+  wchar_t char_value;
   string str_value;
   bool bool_value;
 }lvalue;
 
 typedef struct {
   token_type type;
-  char *lexeme;
+  wchar_t *lexeme;
   lvalue literal;
   size_t line;
 }token;

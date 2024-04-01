@@ -72,7 +72,7 @@ void init_keyword_tree() {
   LEXER_SET = true;
 }
 
-int is_keyword(char *str) {
+int is_keyword(wchar_t *str) {
   if (str == NULL) {
     return -1;
   }
@@ -100,8 +100,8 @@ int is_keyword(char *str) {
   return transversal->keyword;
 }
 
-char *substr(char *str, size_t len, size_t start, size_t end) {
-  char *result = NULL;
+wchar_t *substr(wchar_t *str, size_t len, size_t start, size_t end) {
+  wchar_t *result = NULL;
   
   bool is_len_valid = (len > 0);
   bool is_start_valid = (start < len && start <= end);
@@ -109,7 +109,7 @@ char *substr(char *str, size_t len, size_t start, size_t end) {
   bool is_valid = (is_len_valid && is_start_valid && is_end_valid);
 
   if (is_valid) {
-    result = (char *)malloc((end - start + 2) * sizeof(char));
+    result = (wchar_t *)malloc((end - start + 2) * sizeof(wchar_t));
     if (result != NULL) {
       for (size_t i = start, j = 0; i <= end && str[i] != '\0'; i++, j++) {
         result[j] = str[i];
@@ -141,22 +141,23 @@ bool is_mathoptr(char c) {
   return result;
 }
 
-char *token_name(token_type type) {
-  char *token_types[] = {
+wchar_t *token_name(token_type type) {
+  wchar_t *token_types[] = {
     //single character
-    "LAPREN", "RPAREN", "LBRACE", "RBRACE", "COMMA", "DOT", "MINUS", "PLUS", "SEMICOLON", "SLASH", "STAR", "MOD",
+    L"LAPREN", L"RPAREN", L"LBRACE", L"RBRACE", L"COMMA", L"DOT", L"MINUS", L"PLUS", L"SEMICOLON", L"SLASH", L"STAR", L"MOD",
     //one or two character
-    "BANG", "BANG_EQUAL", "EQUAL", "EQUAL_EQUAL", "GREATER", "GREATER_EQUAL", "LESS", "LESS_EQUAL", 
+    L"BANG", L"BANG_EQUAL", L"EQUAL", L"EQUAL_EQUAL", L"GREATER", L"GREATER_EQUAL", L"LESS", L"LESS_EQUAL", 
     //literals
-    "IDENTIFIER", "INT", "DEC", "CHAR", "STRING", "BOOL",
+    L"IDENTIFIER", L"INT", L"DEC", L"CHAR", L"STRING", L"BOOL",
     //keywords
-    "AND", "CLASS", "ELSE", "FALSE", "FUN", "FOR", "IF", "NIL", "OR", "PRINT", "RETURN", "SUPER", "THIS", "TRUE", "VAR", "WHILE",
+    L"AND", L"CLASS", L"ELSE", L"FALSE", L"FUN", L"FOR", L"IF", L"NIL", L"OR", L"PRINT", L"RETURN", L"SUPER", L"THIS", L"TRUE", L"VAR", L"WHILE",
     //others
-    "END_OF_FILE", "NEWLINE", "CONDITION", "STATEMENT"
+    L"END_OF_FILE", L"NEWLINE", L"CONDITION", L"STATEMENT"
   };
 
   return token_types[type];
 }
+
 
 token_list init_token_list() {
   token_list list;
@@ -184,8 +185,8 @@ void add_token(token_list *list, token value) {
   list->len++;
 }
 
-void scan_token(char *source, token_list *list) {
-  size_t source_len = strlen(source);
+void scan_token(wchar_t *source, token_list *list) {
+  size_t source_len = wcslen(source);
   size_t iter = 0;
   size_t line = 1;
 
@@ -300,6 +301,14 @@ void scan_token(char *source, token_list *list) {
           new_token.type = SLASH;
         }
         break;
+      case '\'':
+        new_token.type = CHAR;
+        if (iter + 2 < source_len) {
+
+        } else {
+          flag = false;
+        }
+        break;
       default:
         if (current_char == '_' || isalpha(current_char)) {
           new_token.type = IDENTIFIER;
@@ -349,11 +358,13 @@ void scan_token(char *source, token_list *list) {
             new_token.lexeme = substr(source, source_len, start_iter, iter - 1);
             if (dot_exist) {
               new_token.type = DEC;
-              double final_value = strtod(new_token.lexeme, NULL);
+              wchar_t *endptr;
+              double final_value = wcstod(new_token.lexeme, &endptr);
               new_token.literal.dec_value = final_value;
             } else {
               new_token.type = INT;
-              int final_value = atoi(new_token.lexeme);
+              wchar_t *endptr;
+              long int final_value = wcstol(new_token.lexeme, &endptr, 10);
               new_token.literal.int_value = final_value;
             }
           } else if (!LEXER_ERROR_OCCURED) {
