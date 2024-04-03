@@ -171,6 +171,15 @@ token_list init_token_list() {
   return list;
 }
 
+string make_str(wchar_t *str) {
+  size_t len = wcslen(str);
+  wchar_t *value = (wchar_t*)malloc(sizeof(wchar_t) * (len + 1));
+  wcscpy(value, str);
+
+  string new_str = {value, len, len};
+  return new_str;
+}
+
 void add_token(token_list *list, token value) {
   if (list->len == list->capacity) {
     list->capacity *= 2;
@@ -302,11 +311,37 @@ void scan_token(wchar_t *source, token_list *list) {
         }
         break;
       case '\'':
-        new_token.type = CHAR;
-        if (iter + 2 < source_len) {
-
+        if (iter + 2 < source_len && source[iter + 2] == '\'') {
+          new_token.type = CHAR;
+          new_token.lexeme = substr(source, source_len, iter + 1, iter + 1);
+          new_token.literal.char_value = source[iter + 1];
+          iter += 2;
         } else {
           flag = false;
+          LEXER_ERROR_OCCURED = true;
+          print_err(INVALID_CHAR, line, L"");
+        }
+        break;
+      case '"':
+        if (iter + 1 < source_len) {
+          size_t start_iter = iter;
+          iter++;
+          while (iter < source_len && source[iter] != '"') {
+            if (source[iter] == '\n' || source[iter] == '\0') {
+              flag = false;
+              break;
+            }
+            iter++;
+          }
+
+          if (iter < source_len && source[iter] == '"' && flag) {
+            new_token.type = STRING;
+            new_token.lexeme = substr(source, source_len, start_iter, iter);
+            new_token.literal.str_value = make_str(substr(source, source_len, start_iter + 1, iter - 1));
+          } else {
+            LEXER_ERROR_OCCURED = true;
+            print_err(INVALID_STRING, line, substr(source, source_len, start_iter, iter));
+          }
         }
         break;
       default:
