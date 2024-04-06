@@ -199,7 +199,9 @@ void scan_token(wchar_t *source, token_list *list) {
   size_t iter = 0;
   size_t line = 1;
 
-  while (iter < source_len && !LEXER_ERROR_OCCURED && source[iter] != '\0') {
+  err_data error_data = {UNEXPECTED_CHAR, line, iter, iter, iter};
+
+  while (iter < source_len && source[iter] != '\0') {
     bool flag = true;
     token new_token;
     new_token.lexeme = substr(source, source_len, iter, iter);
@@ -252,6 +254,8 @@ void scan_token(wchar_t *source, token_list *list) {
       case '\n':
         flag = false;
         line++;
+        error_data.line = line;
+        error_data.start = iter + 1;
         break;
       case '!':
         new_token.type = BANG;
@@ -319,7 +323,14 @@ void scan_token(wchar_t *source, token_list *list) {
         } else {
           flag = false;
           LEXER_ERROR_OCCURED = true;
-          print_err(INVALID_CHAR, line, L"");
+          error_data.type = INVALID_CHAR;
+          error_data.where_start = iter;
+          iter++;
+          while (iter + 1 < source_len && source[iter] != '\0' && source[iter] != '\n' && source[iter] != '\'' && source[iter] != ' ') {
+            iter++;
+          }
+          error_data.where_end = iter;
+          print_err2(source, error_data);
         }
         break;
       case '"':
@@ -367,13 +378,13 @@ void scan_token(wchar_t *source, token_list *list) {
           iter--;
         } else if (isdigit(current_char)) {
           size_t start_iter = iter;
+          iter++;
           bool dot_exist = false;
-          while (iter < source_len && !isspace(source[iter]) && source[iter] != ';' && source[iter] != '\0') {            if (source[iter] == '.') {
+          bool invalid_dec = false;
+          while (iter < source_len && !isspace(source[iter]) && source[iter] != ';' && source[iter] != '\0') {           
+            if (source[iter] == '.') {
               if (dot_exist) {
                 flag = false;
-                LEXER_ERROR_OCCURED = true;
-                print_err(INVALID_DECIMAL, line, substr(source, source_len, start_iter, iter));
-                break;
               }
 
               dot_exist = true;
@@ -381,9 +392,25 @@ void scan_token(wchar_t *source, token_list *list) {
               if (!isdigit(source[iter])) {
                 if (!is_mathoptr(source[iter])) {
                   flag = false;
+                } else {
+                  break;
                 }
-                break;
               }
+            }
+
+            if (!flag && dot_exist) {
+              invalid_dec = true;
+              LEXER_ERROR_OCCURED = true;
+              error_data.type = INVALID_DECIMAL;
+              error_data.where_start = start_iter;
+              iter++;
+              while (iter + 1 < source_len && source[iter] != '\0' && source[iter] != '\n' && source[iter] != ' ') {
+                iter++;
+              }
+              iter--;
+              error_data.where_end = iter;
+              print_err2(source, error_data);
+              break;
             }
 
             iter++;
@@ -402,15 +429,20 @@ void scan_token(wchar_t *source, token_list *list) {
               long int final_value = wcstol(new_token.lexeme, &endptr, 10);
               new_token.literal.int_value = final_value;
             }
-          } else if (!LEXER_ERROR_OCCURED) {
+          } else if (!invalid_dec) {
             LEXER_ERROR_OCCURED = true;
-            print_err(INVALID_INT, line, substr(source, source_len, start_iter, iter));
+            error_data.type = INVALID_INT;
+            error_data.where_start = start_iter;
+            error_data.where_end = iter;
+            print_err2(source, error_data);
           }
           iter--;
         } else {
           flag = false;
           LEXER_ERROR_OCCURED = true;
-          print_err(UNEXPECTED_CHAR, line, substr(source, source_len, iter, iter));
+          error_data.where_start = iter;
+          error_data.where_end = iter;
+          print_err2(source, error_data);
         }
     }
 
