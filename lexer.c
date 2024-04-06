@@ -351,7 +351,10 @@ void scan_token(wchar_t *source, token_list *list) {
             new_token.literal.str_value = make_str(substr(source, source_len, start_iter + 1, iter - 1));
           } else {
             LEXER_ERROR_OCCURED = true;
-            print_err(INVALID_STRING, line, substr(source, source_len, start_iter, iter));
+            error_data.type = INVALID_STRING;
+            error_data.where_start = start_iter;
+            error_data.where_end = iter;
+            print_err2(source, error_data);
           }
         }
         break;
@@ -440,6 +443,7 @@ void scan_token(wchar_t *source, token_list *list) {
         } else {
           flag = false;
           LEXER_ERROR_OCCURED = true;
+          error_data.type = UNEXPECTED_CHAR;
           error_data.where_start = iter;
           error_data.where_end = iter;
           print_err2(source, error_data);

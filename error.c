@@ -72,7 +72,7 @@ void print_err2(wchar_t *source, err_data data) {
       wcscpy(msg, L"Invalid single char");
       break;
     case INVALID_STRING:
-      wcscpy(msg, L"Invalid string");
+      wcscpy(msg, L"Invalid string literal");
       break;
     default:
       wcscpy(msg, L"To be honest I don't know what happens");
