@@ -350,6 +350,7 @@ void scan_token(wchar_t *source, token_list *list) {
             new_token.lexeme = substr(source, source_len, start_iter, iter);
             new_token.literal.str_value = make_str(substr(source, source_len, start_iter + 1, iter - 1));
           } else {
+            flag = false;
             LEXER_ERROR_OCCURED = true;
             error_data.type = INVALID_STRING;
             error_data.where_start = start_iter;
