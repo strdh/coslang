@@ -36,6 +36,9 @@ wchar_t *token_name(token_type type);
 
 token_list init_token_list();
 void add_token(token_list *list, token value);
-void scan_token(wchar_t *source, token_list *list);
+void scan_tokens(wchar_t *source, token_list *list);
+
+// this function is just for development purpose
+void print_tokens(wchar_t *source, token_list list);
 
 #endif

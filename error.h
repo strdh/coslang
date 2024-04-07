@@ -23,7 +23,6 @@ typedef struct {
   size_t where_end;
 }err_data;
 
-void print_err(error_type type, size_t line, wchar_t *where);
-void print_err2(wchar_t *source, err_data data);
+void print_err(wchar_t *source, err_data data);
 
 #endif

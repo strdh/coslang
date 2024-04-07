@@ -24,11 +24,11 @@ const char *keywords[] = {
 };
 const size_t KEYWORD_COUNT = 16;
 
-keyword_node keyword_nodes[65];
-
 const token_type keyword_indexs[] = {
   AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR, PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE
 };
+
+keyword_node keyword_nodes[65];
 
 keyword_node make_keyword_node() {
   keyword_node nnode;
@@ -141,6 +141,7 @@ bool is_mathoptr(char c) {
   return result;
 }
 
+// this function is just for development purpose
 wchar_t *token_name(token_type type) {
   wchar_t *token_types[] = {
     //single character
@@ -194,7 +195,7 @@ void add_token(token_list *list, token value) {
   list->len++;
 }
 
-void scan_token(wchar_t *source, token_list *list) {
+void scan_tokens(wchar_t *source, token_list *list) {
   size_t source_len = wcslen(source);
   size_t iter = 0;
   size_t line = 1;
@@ -204,7 +205,9 @@ void scan_token(wchar_t *source, token_list *list) {
   while (iter < source_len && source[iter] != '\0') {
     bool flag = true;
     token new_token;
-    new_token.lexeme = substr(source, source_len, iter, iter);
+    new_token.lexeme.start = iter;
+    new_token.lexeme.end = iter;
+    new_token.has_literal = false;
     new_token.line = line;
     char current_char = source[iter];
 
@@ -262,7 +265,8 @@ void scan_token(wchar_t *source, token_list *list) {
         if (iter + 1 < source_len) {
           if (source[iter + 1] == '=') {
             new_token.type = BANG_EQUAL;
-            new_token.lexeme = substr(source, source_len, iter, iter + 1);
+            new_token.lexeme.start = iter;
+            new_token.lexeme.end = iter + 1;
             iter++;
           }
         }
@@ -272,7 +276,8 @@ void scan_token(wchar_t *source, token_list *list) {
         if (iter + 1 < source_len) {
           if (source[iter + 1] == '=') {
             new_token.type = EQUAL_EQUAL;
-            new_token.lexeme = substr(source, source_len, iter, iter + 1);
+            new_token.lexeme.start = iter;
+            new_token.lexeme.end = iter + 1;
             iter++;
           }
         }
@@ -282,7 +287,8 @@ void scan_token(wchar_t *source, token_list *list) {
         if (iter + 1 < source_len) {
           if (source[iter + 1] == '=') {
             new_token.type = LESS_EQUAL;
-            new_token.lexeme = substr(source, source_len, iter, iter + 1);
+            new_token.lexeme.start = iter;
+            new_token.lexeme.end = iter + 1;
             iter++;
           }
         }
@@ -292,7 +298,8 @@ void scan_token(wchar_t *source, token_list *list) {
         if (iter + 1 < source_len) {
           if (source[iter + 1] == '=') {
             new_token.type = GREATER_EQUAL;
-            new_token.lexeme = substr(source, source_len, iter, iter + 1);
+            new_token.lexeme.start = iter;
+            new_token.lexeme.end = iter + 1;
             iter++;
           }
         }
@@ -317,7 +324,9 @@ void scan_token(wchar_t *source, token_list *list) {
       case '\'':
         if (iter + 2 < source_len && source[iter + 2] == '\'') {
           new_token.type = CHAR;
-          new_token.lexeme = substr(source, source_len, iter + 1, iter + 1);
+          new_token.lexeme.start = iter + 1;
+          new_token.lexeme.end = iter + 1;
+          new_token.has_literal = true;
           new_token.literal.char_value = source[iter + 1];
           iter += 2;
         } else {
@@ -330,7 +339,7 @@ void scan_token(wchar_t *source, token_list *list) {
             iter++;
           }
           error_data.where_end = iter;
-          print_err2(source, error_data);
+          print_err(source, error_data);
         }
         break;
       case '"':
@@ -347,7 +356,9 @@ void scan_token(wchar_t *source, token_list *list) {
 
           if (iter < source_len && source[iter] == '"' && flag) {
             new_token.type = STRING;
-            new_token.lexeme = substr(source, source_len, start_iter, iter);
+            new_token.lexeme.start = start_iter;
+            new_token.lexeme.end = iter;
+            new_token.has_literal = true;
             new_token.literal.str_value = make_str(substr(source, source_len, start_iter + 1, iter - 1));
           } else {
             flag = false;
@@ -355,7 +366,7 @@ void scan_token(wchar_t *source, token_list *list) {
             error_data.type = INVALID_STRING;
             error_data.where_start = start_iter;
             error_data.where_end = iter;
-            print_err2(source, error_data);
+            print_err(source, error_data);
           }
         }
         break;
@@ -371,13 +382,21 @@ void scan_token(wchar_t *source, token_list *list) {
             iter++;
           }
 
-          new_token.lexeme = substr(source, source_len, start_iter, iter - 1);
-          int keyword_index = is_keyword(new_token.lexeme);
+          new_token.lexeme.start = start_iter;
+          new_token.lexeme.end = iter - 1;
+          wchar_t *lex_str = substr(source, source_len, start_iter, iter - 1);
+          int keyword_index = is_keyword(lex_str);
+          free(lex_str);
 
           if (keyword_index != -1) {
             new_token.type = keyword_index;
-            if (keyword_index == TRUE) new_token.literal.bool_value = true;
-            else if (keyword_index == FALSE) new_token.literal.bool_value = false;
+            if (keyword_index == TRUE) {
+              new_token.has_literal = true;
+              new_token.literal.bool_value = true;
+            } else if (keyword_index == FALSE) {
+              new_token.has_literal = true;
+              new_token.literal.bool_value = false;
+            }
           }
           iter--;
         } else if (isdigit(current_char)) {
@@ -413,7 +432,7 @@ void scan_token(wchar_t *source, token_list *list) {
               }
               iter--;
               error_data.where_end = iter;
-              print_err2(source, error_data);
+              print_err(source, error_data);
               break;
             }
 
@@ -421,24 +440,27 @@ void scan_token(wchar_t *source, token_list *list) {
           }
 
           if (flag) {
-            new_token.lexeme = substr(source, source_len, start_iter, iter - 1);
+            wchar_t *num_str = substr(source, source_len, start_iter, iter - 1);
             if (dot_exist) {
               new_token.type = DEC;
+              new_token.has_literal = true;
               wchar_t *endptr;
-              double final_value = wcstod(new_token.lexeme, &endptr);
+              double final_value = wcstod(num_str, &endptr);
               new_token.literal.dec_value = final_value;
             } else {
               new_token.type = INT;
+              new_token.has_literal = true;
               wchar_t *endptr;
-              long int final_value = wcstol(new_token.lexeme, &endptr, 10);
+              long int final_value = wcstol(num_str, &endptr, 10);
               new_token.literal.int_value = final_value;
             }
+            free(num_str);
           } else if (!invalid_dec) {
             LEXER_ERROR_OCCURED = true;
             error_data.type = INVALID_INT;
             error_data.where_start = start_iter;
             error_data.where_end = iter;
-            print_err2(source, error_data);
+            print_err(source, error_data);
           }
           iter--;
         } else {
@@ -447,7 +469,7 @@ void scan_token(wchar_t *source, token_list *list) {
           error_data.type = UNEXPECTED_CHAR;
           error_data.where_start = iter;
           error_data.where_end = iter;
-          print_err2(source, error_data);
+          print_err(source, error_data);
         }
     }
 
@@ -455,6 +477,44 @@ void scan_token(wchar_t *source, token_list *list) {
 
     if (flag) {
       add_token(list, new_token);
+    }
+  }
+}
+
+// this function is just for development purpose
+void print_tokens(wchar_t *source, token_list list) {
+  for (size_t i = 0; i < list.len; i++) {
+    token tmp = list.value[i];
+
+    wprintf(L"{ %s: ", token_name(tmp.type));
+    for (size_t i = tmp.lexeme.start; i <= tmp.lexeme.end; i++) {
+      wprintf(L"%c", source[i]);
+    }
+
+    if (tmp.has_literal) {
+      switch (tmp.type) {
+      case INT:
+        wprintf(L" LITERAL: %d line: %zu }\n", tmp.literal.int_value, tmp.line);
+        break;
+      case DEC:
+        wprintf(L" LITERAL: %lf line: %zu }\n", tmp.literal.dec_value, tmp.line);
+        break;
+      case CHAR:
+        wprintf(L" LITERAL: %lc line: %zu }\n", tmp.literal.char_value, tmp.line);
+        break;
+      case STRING:
+        wprintf(L" LITERAL: %ls line: %zu }\n", tmp.literal.str_value.value, tmp.line);
+        break;
+      case TRUE:
+        wprintf(L" LITERAL: %d line: %zu }\n", tmp.literal.bool_value, tmp.line);
+        break;
+
+      default:
+        wprintf(L" LITERAL: %d line: %zu }\n", tmp.literal.bool_value, tmp.line);
+        break;
+      }
+    } else {
+      wprintf(L" line: %zu }\n", tmp.line);
     }
   }
 }

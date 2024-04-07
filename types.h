@@ -33,8 +33,14 @@ typedef union {
 }lvalue;
 
 typedef struct {
+  size_t start;
+  size_t end;
+}lexeme_index;
+
+typedef struct {
   token_type type;
-  wchar_t *lexeme;
+  lexeme_index lexeme;
+  bool has_literal;
   lvalue literal;
   size_t line;
 }token;
