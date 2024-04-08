@@ -35,8 +35,12 @@ bool is_mathoptr(char c);
 wchar_t *token_name(token_type type);
 
 token_list init_token_list();
+string make_str(wchar_t *str);
+string make_empty_str();
+void add_char(string *str, wchar_t c);
+void append_chunk(string *str, wchar_t *chunk, size_t bytes_read);
 void add_token(token_list *list, token value);
-void scan_tokens(wchar_t *source, token_list *list);
+void scan_tokens(wchar_t *source, size_t source_len, token_list *list);
 
 // this function is just for development purpose
 void print_tokens(wchar_t *source, token_list list);

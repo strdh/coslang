@@ -43,7 +43,7 @@ void print_err(wchar_t *source, err_data data) {
     printf("  |\n");
   }
 
-  printf("%d | ", data.line);
+  printf("%zu | ", data.line);
   for (size_t i = data.start; source[i] != '\0' && source[i] != '\n'; i++) {
     if (i >= data.where_start && i <= data.where_end) {
       wprintf(L"\033[1;38;5;214m%lc\033[0m", source[i]);

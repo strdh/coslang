@@ -1,3 +1,6 @@
 *.o
 *.exe
 random.c
+/lab
+*.cosl
+*.txt

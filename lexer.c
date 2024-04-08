@@ -159,14 +159,13 @@ wchar_t *token_name(token_type type) {
   return token_types[type];
 }
 
-
 token_list init_token_list() {
   token_list list;
   list.len = 0;
   list.capacity = 256;
   list.value = (token*)malloc(sizeof(token) * list.capacity);
   if (list.value == NULL) {
-    fprintf(stderr, "Error when insert token\n");
+    fprintf(stderr, "Error when init token\n");
     exit(EXIT_FAILURE);
   }
   return list;
@@ -181,10 +180,49 @@ string make_str(wchar_t *str) {
   return new_str;
 }
 
+string make_empty_str() {
+  wchar_t *value = (wchar_t*)malloc(sizeof(wchar_t) * 2048);
+  string new_str = {value, 0, 2048};
+  return new_str;
+}
+
+void add_char(string *str, wchar_t c) {
+  if (str->len == str->capacity) {
+    str->capacity *= 2;
+    str->value = (wchar_t*)realloc(str->value, sizeof(wchar_t) * str->capacity);
+    if (str->value == NULL) {
+      fprintf(stderr, "Error when do reallocation in a string");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  str->value[str->len] = c;
+  str->len++;
+}
+
+void append_chunk(string *str, wchar_t *chunk, size_t bytes_read) {
+  // Ensure capacity
+  while (str->capacity <= str->len + bytes_read) {
+    // Double the capacity
+    str->capacity *= 2;
+    str->value = (wchar_t*)realloc(str->value, sizeof(wchar_t) * str->capacity);
+    if (str->value == NULL) {
+      fprintf(stderr, "Error when reallocating memory for the string");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  // Copy the chunk into the string
+  for (size_t i = 0; i < bytes_read; i++) {
+    str->value[str->len++] = chunk[i];
+  }
+}
+
+
 void add_token(token_list *list, token value) {
   if (list->len == list->capacity) {
     list->capacity *= 2;
-    list->value = (token*)realloc(list->value, list->capacity);
+    list->value = (token*)realloc(list->value, sizeof(token) * list->capacity);
     if (list->value == NULL) {
       fprintf(stderr, "Error when insert token\n");
       exit(EXIT_FAILURE);
@@ -195,12 +233,13 @@ void add_token(token_list *list, token value) {
   list->len++;
 }
 
-void scan_tokens(wchar_t *source, token_list *list) {
-  size_t source_len = wcslen(source);
+void scan_tokens(wchar_t *source, size_t source_len, token_list *list) {
+  //size_t source_len = wcslen(source);
   size_t iter = 0;
   size_t line = 1;
 
-  err_data error_data = {UNEXPECTED_CHAR, line, iter, iter, iter};
+  // printf("(%d)\n", source_len);
+  //err_data error_data = {UNEXPECTED_CHAR, line, iter, iter, iter};
 
   while (iter < source_len && source[iter] != '\0') {
     bool flag = true;
@@ -257,8 +296,8 @@ void scan_tokens(wchar_t *source, token_list *list) {
       case '\n':
         flag = false;
         line++;
-        error_data.line = line;
-        error_data.start = iter + 1;
+        // error_data.line = line;
+        // error_data.start = iter + 1;
         break;
       case '!':
         new_token.type = BANG;
@@ -305,17 +344,15 @@ void scan_tokens(wchar_t *source, token_list *list) {
         }
         break;
       case '/':
-        if (iter + 1 < source_len) {
-          if (source[iter + 1] == '/') {
-            flag = false;
+        if (iter + 1 < source_len && source[iter + 1] == '/') {
+          flag = false;
+          iter++;
+          while (iter < source_len && source[iter] != '\n') {
             iter++;
-            while (iter < source_len && source[iter] != '\n') {
-              iter++;
-            }
+          }
 
-            if (iter < source_len && source[iter] == '\n') {
-              line++;
-            }
+          if (iter < source_len && source[iter] == '\n') {
+            line++;
           }
         } else {
           new_token.type = SLASH;
@@ -332,14 +369,14 @@ void scan_tokens(wchar_t *source, token_list *list) {
         } else {
           flag = false;
           LEXER_ERROR_OCCURED = true;
-          error_data.type = INVALID_CHAR;
-          error_data.where_start = iter;
+          // error_data.type = INVALID_CHAR;
+          // error_data.where_start = iter;
           iter++;
           while (iter + 1 < source_len && source[iter] != '\0' && source[iter] != '\n' && source[iter] != '\'' && source[iter] != ' ') {
             iter++;
           }
-          error_data.where_end = iter;
-          print_err(source, error_data);
+          // error_data.where_end = iter;
+          // print_err(source, error_data);
         }
         break;
       case '"':
@@ -363,10 +400,10 @@ void scan_tokens(wchar_t *source, token_list *list) {
           } else {
             flag = false;
             LEXER_ERROR_OCCURED = true;
-            error_data.type = INVALID_STRING;
-            error_data.where_start = start_iter;
-            error_data.where_end = iter;
-            print_err(source, error_data);
+            // error_data.type = INVALID_STRING;
+            // error_data.where_start = start_iter;
+            // error_data.where_end = iter;
+            // print_err(source, error_data);
           }
         }
         break;
@@ -382,11 +419,14 @@ void scan_tokens(wchar_t *source, token_list *list) {
             iter++;
           }
 
+          iter--;
+
           new_token.lexeme.start = start_iter;
-          new_token.lexeme.end = iter - 1;
-          wchar_t *lex_str = substr(source, source_len, start_iter, iter - 1);
+          new_token.lexeme.end = iter;
+          wchar_t *lex_str = substr(source, source_len, start_iter, iter);
           int keyword_index = is_keyword(lex_str);
           free(lex_str);
+          lex_str = NULL;
 
           if (keyword_index != -1) {
             new_token.type = keyword_index;
@@ -398,7 +438,6 @@ void scan_tokens(wchar_t *source, token_list *list) {
               new_token.literal.bool_value = false;
             }
           }
-          iter--;
         } else if (isdigit(current_char)) {
           size_t start_iter = iter;
           iter++;
@@ -424,15 +463,15 @@ void scan_tokens(wchar_t *source, token_list *list) {
             if (!flag && dot_exist) {
               invalid_dec = true;
               LEXER_ERROR_OCCURED = true;
-              error_data.type = INVALID_DECIMAL;
-              error_data.where_start = start_iter;
+              // error_data.type = INVALID_DECIMAL;
+              // error_data.where_start = start_iter;
               iter++;
               while (iter + 1 < source_len && source[iter] != '\0' && source[iter] != '\n' && source[iter] != ' ') {
                 iter++;
               }
               iter--;
-              error_data.where_end = iter;
-              print_err(source, error_data);
+              // error_data.where_end = iter;
+              // print_err(source, error_data);
               break;
             }
 
@@ -455,21 +494,22 @@ void scan_tokens(wchar_t *source, token_list *list) {
               new_token.literal.int_value = final_value;
             }
             free(num_str);
+            num_str = NULL;
           } else if (!invalid_dec) {
             LEXER_ERROR_OCCURED = true;
-            error_data.type = INVALID_INT;
-            error_data.where_start = start_iter;
-            error_data.where_end = iter;
-            print_err(source, error_data);
+            // error_data.type = INVALID_INT;
+            // error_data.where_start = start_iter;
+            // error_data.where_end = iter;
+            // print_err(source, error_data);
           }
           iter--;
         } else {
           flag = false;
           LEXER_ERROR_OCCURED = true;
-          error_data.type = UNEXPECTED_CHAR;
-          error_data.where_start = iter;
-          error_data.where_end = iter;
-          print_err(source, error_data);
+          // error_data.type = UNEXPECTED_CHAR;
+          // error_data.where_start = iter;
+          // error_data.where_end = iter;
+          // print_err(source, error_data);
         }
     }
 
