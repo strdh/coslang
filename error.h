@@ -2,18 +2,15 @@
 #define ERROR_H
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <wchar.h>
 
-typedef enum {
-  UNEXPECTED_CHAR, INVALID_DECIMAL, INVALID_INT, INVALID_STRING, INVALID_CHAR, PARSER_ERROR
-}error_type;
+extern bool SHOW_ERROR;
 
-typedef struct{
-  size_t line;
-  size_t start;
-  size_t end;
-}code_erraddr;
+typedef enum {
+  UNEXPECTED_CHAR, INVALID_DECIMAL, INVALID_INT, INVALID_STRING, INVALID_CHAR, UNCLOSED_P, UNCLOSED_B, MISS_OP, MISS_OB, PARSER_ERROR 
+}error_type;
 
 typedef struct {
   error_type type;

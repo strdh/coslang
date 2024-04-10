@@ -51,6 +51,12 @@ typedef struct {
   size_t capacity;
 }token_list;
 
+typedef struct {
+  size_t *loc;
+  size_t len;
+  size_t capacity;
+} paren_location;
+
 typedef struct keyword_node{
   bool is_filled;
   token_type keyword;
