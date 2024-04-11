@@ -1,6 +1,6 @@
 #include "error.h"
 
-bool SHOW_ERROR = true;
+bool SHOW_ERROR = false;
 
 void print_err(wchar_t *source, err_data data) {
   if (!SHOW_ERROR) {

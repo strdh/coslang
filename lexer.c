@@ -180,9 +180,9 @@ string make_str(wchar_t *str) {
   return new_str;
 }
 
-string make_empty_str() {
-  wchar_t *value = (wchar_t*)malloc(sizeof(wchar_t) * 2048);
-  string new_str = {value, 0, 2048};
+string make_empty_str(size_t len) {
+  wchar_t *value = (wchar_t*)malloc(sizeof(wchar_t) * (len + 1));
+  string new_str = {value, 0, len+1};
   return new_str;
 }
 
@@ -374,7 +374,7 @@ void scan_tokens(wchar_t *source, size_t source_len, token_list *list) {
         break;
       case '\'':
         if (iter + 2 < source_len && source[iter + 2] == '\'') {
-          new_token.type = CHAR;
+          new_token.type = CHARACTER;
           new_token.lexeme.start = iter + 1;
           new_token.lexeme.end = iter + 1;
           new_token.has_literal = true;
@@ -505,7 +505,7 @@ void scan_tokens(wchar_t *source, size_t source_len, token_list *list) {
               double final_value = wcstod(num_str, &endptr);
               new_token.literal.dec_value = final_value;
             } else {
-              new_token.type = INT;
+              new_token.type = INTEGER;
               new_token.has_literal = true;
               wchar_t *endptr;
               long int final_value = wcstol(num_str, &endptr, 10);
@@ -537,8 +537,6 @@ void scan_tokens(wchar_t *source, size_t source_len, token_list *list) {
     }
   }
 
-  printf("{%zu}{%zu}\n", paren_balances, brace_balances);
-
   if (paren_balances != 0) {
     LEXER_ERROR_OCCURED = true;
     error_data.type = UNCLOSED_P;
@@ -552,7 +550,7 @@ void scan_tokens(wchar_t *source, size_t source_len, token_list *list) {
   }
 }
 
-// this function is just for development purpose
+// This function is just for development purposes
 void print_tokens(wchar_t *source, token_list list) {
   for (size_t i = 0; i < list.len; i++) {
     token tmp = list.value[i];
@@ -564,13 +562,13 @@ void print_tokens(wchar_t *source, token_list list) {
 
     if (tmp.has_literal) {
       switch (tmp.type) {
-      case INT:
+      case INTEGER:
         wprintf(L" LITERAL: %d line: %zu }\n", tmp.literal.int_value, tmp.line);
         break;
       case DEC:
         wprintf(L" LITERAL: %lf line: %zu }\n", tmp.literal.dec_value, tmp.line);
         break;
-      case CHAR:
+      case CHARACTER:
         wprintf(L" LITERAL: %lc line: %zu }\n", tmp.literal.char_value, tmp.line);
         break;
       case STRING:

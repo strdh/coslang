@@ -1,20 +1,28 @@
 #include "lexer.h"
-#include <time.h>
+#include <windows.h>
 
 int main() {
-  // time_t start, end;
-  // double seconds;
-  // start = time(NULL);
+  LARGE_INTEGER frequency;
+  LARGE_INTEGER start;
+  LARGE_INTEGER end;
+  double elapsed;
+  QueryPerformanceFrequency(&frequency);
+  QueryPerformanceCounter(&start);
 
   init_keyword_tree();
   token_list tokens = init_token_list();
 
-  string source = make_empty_str();
-  FILE *file = fopen("source.cosl", "rb");
+  FILE *file = fopen("big.txt", "rb");
   if (file == NULL) {
     perror("Error opening file");
     return 1;
   }
+
+  fseek(file, 0, SEEK_END);
+  size_t len = ftell(file);
+  fseek(file, 0, SEEK_SET);
+
+  string source = make_empty_str(len);
 
   char byte;
   while ((byte = fgetc(file)) != EOF) {
@@ -22,17 +30,16 @@ int main() {
   }
   add_char(&source, '\0');
 
-  printf("[%d][%d]\n", source.len, source.capacity);
+  printf("source length: %d\nsource capacity: %d\n", source.len, source.capacity);
 
   fclose(file);
-  scan_tokens(source.value, source.len - 1,  &tokens);
-  print_tokens(source.value, tokens);
-  printf("[%d][%d]\n", tokens.len, tokens.capacity);
+  scan_tokens(source.value, source.len,  &tokens);
+  // print_tokens(source.value, tokens);
+  printf("tokens obtained: %d\ntokens capacity: %d\n", tokens.len, tokens.capacity);
 
-  // end = time(NULL);
-  // seconds = difftime(end, start);
-  // printf("Elapsed time: %.2f milliseconds\n", seconds * 1000);
-  return 0;
+  QueryPerformanceCounter(&end);
+  elapsed = (double)(end.QuadPart - start.QuadPart) / frequency.QuadPart;
+  printf("Elapsed time: %.9f seconds\n", elapsed);
 
   return 0;
 }

@@ -36,7 +36,7 @@ wchar_t *token_name(token_type type);
 
 token_list init_token_list();
 string make_str(wchar_t *str);
-string make_empty_str();
+string make_empty_str(size_t len);
 void add_char(string *str, wchar_t c);
 void append_chunk(string *str, wchar_t *chunk, size_t bytes_read);
 void add_token(token_list *list, token value);
