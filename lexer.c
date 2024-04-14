@@ -2,7 +2,7 @@
 #include "error.h"
 
 bool LEXER_ERROR_OCCURED = false;
-bool LEXER_SET = false;
+bool LEXER_INITIALIZED = false;
 
 const char *keywords[] = {
   "and",
@@ -69,7 +69,7 @@ void init_keyword_tree() {
     }
   }
 
-  LEXER_SET = true;
+  LEXER_INITIALIZED = true;
 }
 
 int is_keyword(wchar_t *str) {

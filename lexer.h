@@ -18,7 +18,7 @@ The following structs, defined in types.h, are utilized in this file. Refer to t
 */
 
 extern bool LEXER_ERROR_OCCURED;
-extern bool LEXER_SET;
+extern bool LEXER_INITIALIZED;
 
 extern const char *keywords[];
 extern const size_t KEYWORD_COUNT;

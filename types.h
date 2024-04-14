@@ -15,7 +15,7 @@ typedef enum {
   //keywords
   AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR, PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
   //others
-  END_OF_FILE, NEWLINE, CONDITION, STATEMENT
+  END_OF_FILE, NEWLINE, STATEMENT, EXPRESSION
 }token_type;
 
 typedef struct {
@@ -55,12 +55,26 @@ typedef struct {
   size_t *loc;
   size_t len;
   size_t capacity;
-} paren_location;
+}paren_location;
 
 typedef struct keyword_node{
   bool is_filled;
   token_type keyword;
   struct keyword_node *arr[26];
 }keyword_node;
+
+// ----------------------------- PARSER --------------------------------
+
+typedef struct rule_node {
+  bool is_edge;
+  struct rule_node *mapping[46];
+}rule_node;
+
+typedef struct var_node {
+  bool is_filled;
+  size_t scope;
+  lvalue value;
+  struct var_node *mapping[63];
+}var_node;
 
 #endif
