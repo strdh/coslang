@@ -144,17 +144,16 @@ bool is_mathoptr(char c) {
 // this function is just for development purpose
 wchar_t *token_name(token_type type) {
   wchar_t *token_types[] = {
-    //single character
-    L"LAPREN", L"RPAREN", L"LBRACE", L"RBRACE", L"COMMA", L"DOT", L"MINUS", L"PLUS", L"SEMICOLON", L"SLASH", L"STAR", L"MOD",
-    //one or two character
-    L"BANG", L"BANG_EQUAL", L"EQUAL", L"EQUAL_EQUAL", L"GREATER", L"GREATER_EQUAL", L"LESS", L"LESS_EQUAL", 
-    //literals
-    L"IDENTIFIER", L"INT", L"DEC", L"CHAR", L"STRING", L"BOOL",
-    //keywords
-    L"AND", L"CLASS", L"ELSE", L"FALSE", L"FUN", L"FOR", L"IF", L"NIL", L"OR", L"PRINT", L"RETURN", L"SUPER", L"THIS", L"TRUE", L"VAR", L"WHILE",
-    //others
-    L"END_OF_FILE", L"NEWLINE", L"CONDITION", L"STATEMENT"
-  };
+      // single character
+      L"LAPREN", L"RPAREN", L"LBRACE", L"RBRACE", L"LBRACKET", L"RBRACKET", L"COMMA", L"DOT", L"MINUS", L"PLUS", L"SEMICOLON", L"SLASH", L"STAR", L"MOD",
+      // one or two character
+      L"BANG", L"BANG_EQUAL", L"EQUAL", L"EQUAL_EQUAL", L"GREATER", L"GREATER_EQUAL", L"LESS", L"LESS_EQUAL",
+      // literals
+      L"IDENTIFIER", L"INT", L"DEC", L"CHAR", L"STRING", L"BOOL",
+      // keywords
+      L"AND", L"CLASS", L"ELSE", L"FALSE", L"FUN", L"FOR", L"IF", L"NIL", L"OR", L"PRINT", L"RETURN", L"SUPER", L"THIS", L"TRUE", L"VAR", L"WHILE",
+      // others
+      L"END_OF_FILE", L"STATEMENT", L"EXPRESSION"};
 
   return token_types[type];
 }
@@ -200,21 +199,25 @@ void add_char(string *str, wchar_t c) {
   str->len++;
 }
 
-void append_chunk(string *str, wchar_t *chunk, size_t bytes_read) {
-  while (str->capacity <= str->len + bytes_read) {
-    str->capacity *= 2;
-    str->value = (wchar_t*)realloc(str->value, sizeof(wchar_t) * str->capacity);
-    if (str->value == NULL) {
-      fprintf(stderr, "Error when reallocating memory for the string");
+line_loc_list init_loc_list() {
+  line_loc *value = (line_loc*)malloc(sizeof(line_loc) * 2048);
+  line_loc_list list = {value, 0, 2048};
+  return list;
+}
+
+void add_loc(line_loc_list *list, line_loc value) {
+  if (list->len == list->capacity) {
+    list->capacity *= 2;
+    list->value = (line_loc*)realloc(list->value, sizeof(line_loc) * list->capacity);
+    if (list->value == NULL) {
+      fprintf(stderr, "Error when do reallocation in a string");
       exit(EXIT_FAILURE);
     }
   }
 
-  for (size_t i = 0; i < bytes_read; i++) {
-    str->value[str->len++] = chunk[i];
-  }
+  list->value[list->len] = value;
+  list->len++;
 }
-
 
 void add_token(token_list *list, token value) {
   if (list->len == list->capacity) {
@@ -230,12 +233,14 @@ void add_token(token_list *list, token value) {
   list->len++;
 }
 
-void scan_tokens(wchar_t *source, size_t source_len, token_list *list) {
+void scan_tokens(wchar_t *source, size_t source_len, token_list *list, line_loc_list *line_loc_list) {
   size_t iter = 0;
   size_t line = 1;
+  line_loc line_location = {0, 0};
 
   int paren_balances = 0;
   int brace_balances = 0;
+  int bracket_balances = 0;
 
   err_data error_data = {UNEXPECTED_CHAR, line, iter, iter, iter};
 
@@ -277,6 +282,20 @@ void scan_tokens(wchar_t *source, size_t source_len, token_list *list) {
           print_err(source, error_data);
         }
         break;
+      case '[':
+        new_token.type = LBRACKET;
+        bracket_balances++;
+        break;
+      case ']':
+        new_token.type = RBRACKET;
+        brace_balances--;
+        if (bracket_balances < 0) {
+          bracket_balances = 0;
+          LEXER_ERROR_OCCURED = true;
+          error_data.type = MISS_OSB;
+          print_err(source, error_data);
+        }
+        break;
       case ',':
         new_token.type = COMMA;
         break;
@@ -312,6 +331,9 @@ void scan_tokens(wchar_t *source, size_t source_len, token_list *list) {
         line++;
         error_data.line = line;
         error_data.start = iter + 1;
+        line_location.end = iter;
+        add_loc(line_loc_list, line_location);
+        line_location.start = iter + 1;
         break;
       case '!':
         new_token.type = BANG;
@@ -389,6 +411,14 @@ void scan_tokens(wchar_t *source, size_t source_len, token_list *list) {
           while (iter + 1 < source_len && source[iter] != '\0' && source[iter] != '\n' && source[iter] != '\'' && source[iter] != ' ') {
             iter++;
           }
+
+          if (source[iter] == '\n') {
+            line++;
+            line_location.end = iter;
+            add_loc(line_loc_list, line_location);
+            line_location.start = iter + 1;
+          }
+
           error_data.where_end = iter;
           print_err(source, error_data);
         }
@@ -399,6 +429,12 @@ void scan_tokens(wchar_t *source, size_t source_len, token_list *list) {
           iter++;
           while (iter < source_len && source[iter] != '"') {
             if (source[iter] == '\n' || source[iter] == '\0') {
+              if (source[iter] == '\n') {
+                line++;
+                line_location.end = iter;
+                add_loc(line_loc_list, line_location);
+                line_location.start = iter + 1;
+              }
               flag = false;
               break;
             }
@@ -537,6 +573,9 @@ void scan_tokens(wchar_t *source, size_t source_len, token_list *list) {
     }
   }
 
+  line_location.end = iter - 1;
+  add_loc(line_loc_list, line_location);
+
   if (paren_balances != 0) {
     LEXER_ERROR_OCCURED = true;
     error_data.type = UNCLOSED_P;
@@ -546,6 +585,12 @@ void scan_tokens(wchar_t *source, size_t source_len, token_list *list) {
   if (brace_balances != 0) {
     LEXER_ERROR_OCCURED = true;
     error_data.type = UNCLOSED_B;
+    print_err(source, error_data);
+  }
+
+  if (bracket_balances != 0) {
+    LEXER_ERROR_OCCURED = true;
+    error_data.type = UNCLOSED_SB;
     print_err(source, error_data);
   }
 }

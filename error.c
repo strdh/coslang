@@ -39,12 +39,18 @@ void print_err(wchar_t *source, err_data data) {
     case MISS_OB:
       wcscpy(msg, L"There missing open bracket");
       break;
+    case UNCLOSED_SB:
+      wcscpy(msg, L"There unclosed square bracket");
+      break;
+    case MISS_OSB:
+      wcscpy(msg, L"There is missing open square bracket");
+      break;
     default:
       wcscpy(msg, L"To be honest I don't know what happens");
   }
 
   
-  if (data.type != UNCLOSED_P && data.type != UNCLOSED_B && data.type != MISS_OP && data.type != MISS_OB) {
+  if (data.type != UNCLOSED_P && data.type != UNCLOSED_B && data.type != MISS_OP && data.type != MISS_OB && data.type != UNCLOSED_SB && data.type != MISS_OSB) {
     wprintf(L"\033[1;31mERROR:%ls on line %zu\033[0m\n", msg, data.line);
     size_t space_count = 0;
 

@@ -10,7 +10,7 @@ int main() {
   QueryPerformanceFrequency(&frequency);
   QueryPerformanceCounter(&start);
 
-  FILE *file = fopen("source.cosl", "rb");
+  FILE *file = fopen("big.txt", "rb");
   if (file == NULL) {
     perror("Error opening file");
     return 1;
@@ -33,12 +33,24 @@ int main() {
   init_keyword_tree();
   token_list tokens = init_token_list();
 
+  line_loc_list line_locs = init_loc_list();
+
   if (!LEXER_INITIALIZED) {
     return 1;
   }
-  scan_tokens(source.value, source.len,  &tokens);
+  scan_tokens(source.value, source.len, &tokens, &line_locs);
   // print_tokens(source.value, tokens);
+
+  printf("line location: %d\n", line_locs.len);
   printf("tokens obtained: %d\ntokens capacity: %d\n", tokens.len, tokens.capacity);
+
+  token tk = tokens.value[tokens.len-1];
+  line_loc ll = line_locs.value[line_locs.len-1];
+
+  wchar_t *tks = substr(source.value, source.len, tk.lexeme.start, tk.lexeme.end);
+  wchar_t *lls = substr(source.value, source.len, ll.start, ll.end);
+
+  wprintf(L"%ls\n%ls\n", tks, lls);
 
   // parser phrase
   init_rule_tree();
@@ -47,9 +59,9 @@ int main() {
     return 1;
   }
 
-  bool result = parse_tokens(tokens);
+  // bool result = parse_tokens(tokens);
 
-  printf("[RESULT: %d]\n", result);
+  // printf("[RESULT: %d]\n", result);
 
   QueryPerformanceCounter(&end);
   elapsed = (double)(end.QuadPart - start.QuadPart) / frequency.QuadPart;

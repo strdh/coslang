@@ -38,9 +38,10 @@ token_list init_token_list();
 string make_str(wchar_t *str);
 string make_empty_str(size_t len);
 void add_char(string *str, wchar_t c);
-void append_chunk(string *str, wchar_t *chunk, size_t bytes_read);
+line_loc_list init_loc_list();
+void add_loc(line_loc_list *list, line_loc value);
 void add_token(token_list *list, token value);
-void scan_tokens(wchar_t *source, size_t source_len, token_list *list);
+void scan_tokens(wchar_t *source, size_t source_len, token_list *list, line_loc_list *line_loc_list);
 
 // this function is just for development purpose
 void print_tokens(wchar_t *source, token_list list);

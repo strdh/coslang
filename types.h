@@ -7,7 +7,7 @@
 
 typedef enum {
   //single-character token_type
-  LPAREN, RPAREN, LBRACE, RBRACE, COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR, MOD,
+  LPAREN, RPAREN, LBRACE, RBRACE, LBRACKET, RBRACKET, COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR, MOD,
   //one or two character token_type
   BANG, BANG_EQUAL, EQUAL, EQUAL_EQUAL, GREATER, GREATER_EQUAL, LESS, LESS_EQUAL,
   //literals
@@ -15,7 +15,7 @@ typedef enum {
   //keywords
   AND, CLASS, ELSE, FALSE, FUN, FOR, IF, NIL, OR, PRINT, RETURN, SUPER, THIS, TRUE, VAR, WHILE,
   //others
-  END_OF_FILE, NEWLINE, STATEMENT, EXPRESSION
+  END_OF_FILE, STATEMENT, EXPRESSION
 }token_type;
 
 typedef struct {
@@ -52,10 +52,15 @@ typedef struct {
 }token_list;
 
 typedef struct {
-  size_t *loc;
+  size_t start;
+  size_t end;
+}line_loc;
+
+typedef struct {
+  line_loc *value;
   size_t len;
   size_t capacity;
-}paren_location;
+}line_loc_list;
 
 typedef struct keyword_node{
   bool is_filled;
