@@ -70,13 +70,52 @@ int hash_char(char character) {
   }
 }
 
-bool parse_tokens(token_list list) {
-  rule_node *transversal = &rules[0];
+// bool parse_tokens(token_list list) {
+//   rule_node *transversal = &rules[0];
 
+//   for (size_t i = 0; i < list.len; i++) {
+//     token_type type = list.value[i].type;
+//     if (transversal->mapping[type] == NULL) {
+//       return false;
+//     }
+
+//     transversal = transversal->mapping[type];
+//   }
+
+//   if (!transversal->is_edge) {
+//     return false;
+//   }
+
+//   return true;
+// }
+
+bool parse_token(token_list list) {
+  size_t scope = 1;
+  rule_node *transversal = &rules[0];
   for (size_t i = 0; i < list.len; i++) {
     token_type type = list.value[i].type;
+
     if (transversal->mapping[type] == NULL) {
-      return false;
+      if (transversal->mapping[STATEMENT] != NULL) {
+        // evaluate the statement
+      } else {
+        return false;
+      }
+    }
+
+    switch (type) {
+      case IDENTIFIER:
+        // do identifier checking
+        break;
+      case LBRACE:
+        scope++;
+        break;
+      case RBRACE:
+        scope--;
+        break; 
+      
+      default:
+        break;
     }
 
     transversal = transversal->mapping[type];

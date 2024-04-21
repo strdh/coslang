@@ -20,4 +20,4 @@ $(TARGET): $(OBJECTS)
 # Clean target
 .PHONY: clean
 clean:
-	del $(OBJECTS) $(TARGET)
+	del $(OBJECTS) coslang.exe

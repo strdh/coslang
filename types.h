@@ -62,7 +62,7 @@ typedef struct {
   size_t capacity;
 }line_loc_list;
 
-typedef struct keyword_node{
+typedef struct keyword_node {
   bool is_filled;
   token_type keyword;
   struct keyword_node *arr[26];
@@ -75,11 +75,22 @@ typedef struct rule_node {
   struct rule_node *mapping[46];
 }rule_node;
 
-typedef struct var_node {
-  bool is_filled;
+// typedef struct var_node {
+//   bool is_filled;
+//   size_t scope;
+//   lvalue value;
+//   struct var_node *mapping[63];
+// }var_node;
+typedef struct {
+  lvalue *value;
+  size_t len;
+  size_t capacity;
+}var_value_list;
+
+typedef struct var_identifier_node {
   size_t scope;
-  lvalue value;
-  struct var_node *mapping[63];
-}var_node;
+  lvalue *value;
+  struct var_identifier_node *mapping[63];
+}var_identifier_node;
 
 #endif
