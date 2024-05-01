@@ -1,5 +1,7 @@
 #include "vm.h"
 
+VM vm;
+
 void *reallocate(void *pointer, size_t old_size, size_t new_size) {
   if (new_size == 0) {
     free(pointer);
@@ -89,6 +91,26 @@ void print_chunk(Chunk *chunk, const char *name) {
         i += 2;
         break;
       }
+      case OP_ADD:
+        printf("%s\n", name);
+        i++;
+        break;
+      case OP_SUBTRACT:
+        printf("%s\n", name);
+        i++;
+        break;
+      case OP_MULTIPLY:
+        printf("%s\n", name);
+        i++;
+        break;
+      case OP_DIVIDE:
+        printf("%s\n", name);
+        i++;
+        break;
+      case OP_NEGATE:
+        printf("%s\n", name);
+        i++;
+        break;
       case OP_RETURN:
         printf("%s\n", name);
         i++;
@@ -99,4 +121,83 @@ void print_chunk(Chunk *chunk, const char *name) {
         break; // Include break statement for default case
     }
   }
+}
+
+void reset_stack() {
+  vm.stack_top = vm.stack;
+}
+
+void init_vm();
+
+void free_vm();
+
+static InterpretResult run() {
+#define READ_BYTE() (*vm.ip++)
+#define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
+#define BINARY_OP(op) \
+  do { \
+    double b = pop(); \
+    double a = pop(); \
+    push(a op b);     \
+  } while (false)
+
+  for (;;) {
+#ifdef DEBUG_TRACE_EXECUTION
+      printf("           ");
+      for (value *slot = vm.stack; slot < vm.stack_top; slot++) {
+        printf("[ ");
+        print_value(*slot);
+        printf(" ]");
+      }
+      printf("\n");
+      disassemble_instruction(vm.c, (int)(vm.ip - vm.c->code));
+#endif
+    uint8_t instruction;
+    switch (instruction = READ_BYTE()) {
+      case OP_ADD:
+        BINARY_OP(+);
+        break;
+      case OP_SUBTRACT:
+        BINARY_OP(-);
+        break;
+      case OP_MULTIPLY:
+        BINARY_OP(*);
+        break;
+      case OP_DIVIDE:
+        BINARY_OP(/);
+        break;
+      case OP_NEGATE:
+        push(-pop());
+        break;
+      case OP_RETURN: 
+        print_value(pop());
+        printf("\n");
+        return INTERPRET_OK;
+      case OP_CONSTANT: {
+        double constant = READ_CONSTANT();
+        push(constant);
+        break;
+      }
+    }
+  }
+
+#undef READ_BYTE
+#undef READ_CONSTANT
+#undef BINARY_OP
+}
+
+InterpretResult interpret(Chunk *chunk) {
+  vm.chunk = chunk;
+  vm.ip = vm.chunk->code;
+  return run();
+}
+
+void push(double value) {
+  *vm.stack_top = value;
+  vm.stack_top++;
+}
+
+double pop() {
+  vm.stack_top--;
+  return *vm.stack_top;
 }

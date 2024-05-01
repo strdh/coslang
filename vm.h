@@ -16,6 +16,7 @@
 #define FREE_ARRAY(type, pointer, oldCount) \
   reallocate(pointer, sizeof(type) * (oldCount), 0)
 
+#define STACK_MAX 100000
 
 typedef struct {
   double *values;
@@ -24,7 +25,13 @@ typedef struct {
 }ValueArray;
 
 typedef enum {
-  OP_CONSTANT, OP_RETURN
+  OP_CONSTANT,
+  OP_ADD,
+  OP_SUBTRACT,
+  OP_MULTIPLY,
+  OP_DIVIDE,
+  OP_NEGATE,
+  OP_RETURN,
 }Opcode;
 
 typedef struct {
@@ -34,6 +41,17 @@ typedef struct {
   size_t len;
   size_t capacity;
 }Chunk;
+
+typedef struct {
+  Chunk *chunk;
+  uint8_t *ip;
+  double stack[STACK_MAX];
+  double *stack_top;
+}VM;
+
+typedef enum {
+  INTERPRET_OK, INTERPRET_COMPILE_ERROR, INTERPRET_RUNTIME_ERROR
+}InterpretResult;
 
 void *reallocate(void *pointer, size_t old_size, size_t new_size);
 
@@ -46,5 +64,12 @@ void write_chunk(Chunk *chunk, uint8_t byte, size_t line);
 void free_chunk(Chunk *chunk);
 int add_constant(Chunk *c, double value);
 void print_chunk(Chunk *chunk, const char *name);
+
+void reset_stack();
+void init_vm();
+void free_vm();
+InterpretResult interpret(Chunk *chunk);
+void push(double value);
+double pop();
 
 #endif
