@@ -131,6 +131,10 @@ void init_vm();
 
 void free_vm();
 
+static void print_value(double v) {
+  printf("%g", v);
+}
+
 static InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
